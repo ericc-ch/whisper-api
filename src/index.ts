@@ -1,13 +1,31 @@
-import { Hono } from 'hono'
+import { Hono } from "hono";
+import { basicAuth } from "hono/basic-auth";
+import { logger } from "hono/logger";
 
 type Bindings = {
-  [key in keyof CloudflareBindings]: CloudflareBindings[key]
-}
+  [key in keyof CloudflareBindings]: CloudflareBindings[key];
+};
 
-const app = new Hono<{ Bindings: Bindings }>()
+type Env = {
+  AUTH_USERNAME: string;
+  AUTH_PASSWORD: string;
+};
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+const app = new Hono<{ Bindings: Bindings & Env }>();
 
-export default app
+app.use("/*", logger());
+
+app.use("/*", (c, next) => {
+  const middleware = basicAuth({
+    username: c.env.AUTH_USERNAME,
+    password: c.env.AUTH_PASSWORD,
+  });
+
+  return middleware(c, next);
+});
+
+app.get("/sst", (c) => {
+  return c.text("Hello Hono!");
+});
+
+export default app;
