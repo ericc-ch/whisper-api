@@ -24,8 +24,30 @@ app.use("/*", (c, next) => {
   return middleware(c, next);
 });
 
-app.get("/sst", (c) => {
-  return c.text("Hello Hono!");
+const megabytes = (size: number) => size * 1024 * 1024;
+
+app.post("/stt", async (c) => {
+  const body = await c.req.parseBody();
+
+  const file = body["file"];
+  if (!(file instanceof File))
+    return c.json(
+      {
+        message: '"file" must be a File',
+      },
+      400
+    );
+
+  if (file.size > megabytes(100))
+    return c.json({ message: "File is too large" }, 400);
+
+  const audio = await file.arrayBuffer();
+
+  const response = await c.env.AI.run("@cf/openai/whisper-tiny-en", {
+    audio: [...new Uint8Array(audio)],
+  });
+
+  return c.json(response);
 });
 
 export default app;
