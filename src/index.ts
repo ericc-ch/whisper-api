@@ -29,17 +29,12 @@ const megabytes = (size: number) => size * 1024 * 1024;
 app.post("/stt", async (c) => {
   const body = await c.req.parseBody();
 
-  const file = body["file"];
-  if (!(file instanceof File))
-    return c.json(
-      {
-        message: '"file" must be a File',
-      },
-      400
-    );
+  const file = body["audio"];
+  if (!(file instanceof Blob))
+    return c.json({ message: "Audio file must be a File" }, 400);
 
   if (file.size > megabytes(100))
-    return c.json({ message: "File is too large" }, 400);
+    return c.json({ message: "Audio file is too large" }, 400);
 
   const audio = await file.arrayBuffer();
 
